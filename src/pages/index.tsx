@@ -35,14 +35,16 @@ import { useHost } from "esdeka/react";
 import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
 import Slider from "@mui/material/Slider";
+// import dynamic from "next/dynamic";
+// const MonacoEditor = dynamic(import("@monaco-editor/react"), { ssr: false });
 
 const base = {
 	default: `
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
-const FPS = 60;
 /*60FPS draw cycle*/
 function draw(){
+  const FPS = 60;
   setTimeout(requestAnimationFrame(draw),1000/FPS)
 }
 draw();
@@ -71,7 +73,7 @@ export default function Home() {
 	const { broadcast, call, subscribe } = useHost(ref, "fail4");
 
 	const connection = useRef(false);
-	const [tries, setTries] = useState(5);
+	const [tries, setTries] = useState(1);
 
 	// Send a connection request
 	useEffect(() => {
@@ -84,6 +86,8 @@ export default function Home() {
 
 		const timeout = setTimeout(() => {
 			if (current) {
+				// call({ template: "" });
+
 				call({ template: current.content });
 			}
 
@@ -102,9 +106,8 @@ export default function Home() {
 				switch (action.type) {
 					case "answer":
 						connection.current = true;
-						setTimeout(() => {
-							setLoadingLive(false);
-						}, 1_500);
+						setLoadingLive(false);
+
 						console.log("connected");
 						break;
 					default:
@@ -121,15 +124,15 @@ export default function Home() {
 	}, [subscribe, loadingLive]);
 
 	// Broadcast store to guest
-	useEffect(() => {
-		const current = answers.find(({ id }) => id === runningId);
-		if (connection.current && current) {
-			broadcast({ template: current.content });
-		}
-		return () => {
-			/* Consistency */
-		};
-	}, [broadcast, runningId, answers]);
+	// useEffect(() => {
+	// 	const current = answers.find(({ id }) => id === runningId);
+	// 		if (connection.current && current) {
+	// 			broadcast({ template: current.content });
+	// 		}
+	// 		return () => {
+	// 			/* Consistency */
+	// 		};
+	// 	}, [broadcast, runningId, answers]);
 
 	// useEffect(() => {
 	// 	const current = answers.find(({ id }) => id === runningId);
@@ -147,7 +150,7 @@ export default function Home() {
 		if (ref.current) {
 			ref.current.src = `/live?${nanoid()}`;
 			setLoadingLive(true);
-			setTries(3);
+			setTries(1);
 		}
 	}
 
@@ -206,7 +209,7 @@ export default function Home() {
 									color="inherit"
 									aria-label="Clear Prompt"
 									onClick={async () => {
-										broadcast({ template: base.default });
+										// broadcast({ template: base.default });
 										setActiveId("1");
 										setTemplate(base.default);
 										reload();
@@ -227,8 +230,8 @@ export default function Home() {
 									id="prompt"
 									name="prompt"
 									label="Prompt"
-									placeholder="add a red heart"
-									defaultValue="add a red heart"
+									placeholder="red heart"
+									defaultValue="red heart"
 									maxRows={6}
 									InputProps={{
 										style: fontMono.style,

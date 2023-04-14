@@ -57,6 +57,7 @@ export async function toOpenAI({
 All UPPERCASE words are IMPORTANT, all "UPPERCASE" words in QUOTES (") indicate KEYWORDS.
 You are: expert JavaScript Developer, creative, Canvas-2d expert, performance guru, interaction expert.
 You strictly follow all "DOCS".
+You extend "CHANGELOG".
 You ALWAYS follow the "ADD", "REMOVE", "INPUT" and "OUTPUT FORMAT".
 You NEVER explain anything.
 

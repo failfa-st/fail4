@@ -35,11 +35,11 @@ import { useHost } from "esdeka/react";
 import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
 import Slider from "@mui/material/Slider";
-// import dynamic from "next/dynamic";
-// const MonacoEditor = dynamic(import("@monaco-editor/react"), { ssr: false });
 
 const base = {
-	default: `
+	default: `/** CHANGELOG
+ * 1. Set up canvas
+ */
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
 /*60FPS draw cycle*/
@@ -123,26 +123,6 @@ export default function Home() {
 		};
 	}, [subscribe, loadingLive]);
 
-	// Broadcast store to guest
-	// useEffect(() => {
-	// 	const current = answers.find(({ id }) => id === runningId);
-	// 		if (connection.current && current) {
-	// 			broadcast({ template: current.content });
-	// 		}
-	// 		return () => {
-	// 			/* Consistency */
-	// 		};
-	// 	}, [broadcast, runningId, answers]);
-
-	// useEffect(() => {
-	// 	const current = answers.find(({ id }) => id === runningId);
-	// 	if (current) {
-	// 		void axios.post("/api/run", {
-	// 			content: current.content,
-	// 		});
-	// 	}
-	// }, [runningId, answers]);
-
 	const current = answers.find(({ id }) => id === activeId);
 
 	function reload() {
@@ -179,7 +159,7 @@ export default function Home() {
 								setLoading(true);
 								const { data } = await axios.post("/api/gpt", formObject);
 								const answer = data;
-								setAnswers([answer, ...answers]);
+								setAnswers(previousAnswers => [answer, ...previousAnswers]);
 								setRunningId(answer.id);
 								reload();
 							} catch (error) {
@@ -287,7 +267,7 @@ export default function Home() {
 									name="template"
 									label="Template"
 									placeholder={base.default}
-									maxRows={6}
+									maxRows={10}
 									value={template}
 									InputProps={{
 										style: { ...fontMono.style },
@@ -312,11 +292,14 @@ export default function Home() {
 													edge="end"
 													aria-label="Delete"
 													onClick={() => {
-														setAnswers(
-															answers.filter(
+														setAnswers(previousAnswers =>
+															previousAnswers.filter(
 																({ id }) => id !== answer.id
 															)
 														);
+														setRunningId("1");
+														setTemplate(base.default);
+														reload();
 													}}
 												>
 													<DeleteForeverIcon />

@@ -302,9 +302,11 @@ export default function Home() {
 																({ id }) => id !== answer.id
 															)
 														);
-														setRunningId("1");
-														setTemplate(base.default);
-														reload();
+														if (runningId === answer.id) {
+															setRunningId("1");
+															setTemplate(base.default);
+															reload();
+														}
 													}}
 												>
 													<DeleteForeverIcon />

@@ -30,9 +30,13 @@ import Toolbar from "@mui/material/Toolbar";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
+import { useHost } from "esdeka/react";
 
 const base = {
-	default: "/** 1.Base Script */const canvas=document.querySelector('canvas');",
+	default: `/** 1.Base Script */
+const canvas=document.querySelector('canvas');
+const ctx=canvas.getContext('2d');
+`,
 };
 
 const fontMono = Fira_Code({
@@ -53,14 +57,71 @@ export default function Home() {
 	]);
 	const [loading, setLoading] = useState(false);
 
+	const { broadcast, call, subscribe } = useHost(ref, "fail4");
+
+	const connection = useRef(false);
+	const [tries, setTries] = useState(5);
+
+	// Send a connection request
+	useEffect(() => {
+		if (connection.current || tries <= 0) {
+			return () => {
+				/* Consistency */
+			};
+		}
+
+		const timeout = setTimeout(() => {
+			call({ template: "console.log('it works')" });
+			setTries(tries - 1);
+		}, 200);
+
+		call({ template: "console.log('it works')" });
+
+		return () => {
+			clearTimeout(timeout);
+		};
+	}, [call, tries]);
+
+	useEffect(() => {
+		if (!connection.current) {
+			const unsubscribe = subscribe(event => {
+				const { action } = event.data;
+				switch (action.type) {
+					case "answer":
+						connection.current = true;
+						break;
+					default:
+						break;
+				}
+			});
+			return () => {
+				unsubscribe();
+			};
+		}
+		return () => {
+			/* Consistency */
+		};
+	}, [subscribe]);
+
+	// Broadcast store to guest
 	useEffect(() => {
 		const current = answers.find(({ id }) => id === runningId);
-		if (current) {
-			void axios.post("/api/run", {
-				content: current.content,
-			});
+		if (connection.current && current) {
+			broadcast({ template: current.content });
 		}
-	}, [runningId, answers]);
+		return () => {
+			/* Consistency */
+		};
+	}, [broadcast, runningId, answers]);
+
+	// useEffect(() => {
+	// 	const current = answers.find(({ id }) => id === runningId);
+	// 	if (current) {
+	// 		void axios.post("/api/run", {
+	// 			content: current.content,
+	// 		});
+	// 	}
+	// }, [runningId, answers]);
 
 	const current = answers.find(({ id }) => id === activeId);
 
@@ -114,14 +175,14 @@ export default function Home() {
 								color="inherit"
 								aria-label="Clear Prompt"
 								onClick={async () => {
-									await axios.post("/api/run", {
-										content:
-											"/** 1.Base Script */const canvas=document.querySelector('canvas');",
-									});
+									broadcast({ template: base.default });
+
+									//await axios.post("/api/run", {
+									//	content:
+									//		base.default,
+									//});
 									setActiveId("1");
-									setTemplate(
-										"/** 1.Base Script */const canvas=document.querySelector('canvas');"
-									);
+									setTemplate(base.default);
 								}}
 							>
 								<ClearIcon />
@@ -266,7 +327,7 @@ export default function Home() {
 					ref={ref}
 					component="iframe"
 					sx={{ width: "100%", flex: 1, m: 0, border: 0 }}
-					src="//localhost:8080"
+					src="/live"
 				/>
 			</Stack>
 		</Stack>

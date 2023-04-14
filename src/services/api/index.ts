@@ -1,5 +1,6 @@
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import { nanoid } from "nanoid";
+import process from "node:process";
 
 const configuration = new Configuration({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -53,9 +54,8 @@ export async function toOpenAI({
 				{
 					role: "system",
 					content: miniPrompt`
-All UPPERCASE words are IMPORTANT, all "UPPERCASE" words in QUOTES (") indicate KEYWORDS,
-You are an expert JavaScript Developer, with a creative mindset.
-You are a Canvas-2d expert and performance guru.
+All UPPERCASE words are IMPORTANT, all "UPPERCASE" words in QUOTES (") indicate KEYWORDS.
+You are: expert JavaScript Developer, creative, Canvas-2d expert, performance guru, interaction expert.
 You strictly follow all "DOCS".
 You ALWAYS follow the "ADD", "REMOVE", "INPUT" and "OUTPUT FORMAT".
 You NEVER explain anything.

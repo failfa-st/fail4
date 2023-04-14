@@ -50,12 +50,6 @@ function answer(window_, channel, targetOrigin = "*") {
 }
 
 function handleTemplate(template) {
-	for (let i = 1; i < 1_000; i++) {
-		window.clearInterval(i);
-		window.cancelAnimationFrame(i);
-		window.clearTimeout(i);
-	}
-
 	try {
 		Function("Template", `${template};`)();
 	} catch (error) {

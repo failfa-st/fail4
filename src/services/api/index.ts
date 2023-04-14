@@ -41,7 +41,7 @@ export async function toOpenAI({
 			ADD: ${prompt_}
 			${negativePrompt_ ? `REMOVE: ${negativePrompt_}` : ""}
 			INPUT: ${template.trim()}
-			OUTPUT FORMAT: plain valid JavaScript
+			OUTPUT FORMAT: pure valid JavaScript
 		`,
 	};
 	const task = `${prompt_}${negativePrompt_ ? ` | not(${negativePrompt_})` : ""}`;
@@ -60,12 +60,13 @@ You strictly follow all "DOCS".
 You extend "CHANGELOG" and the CODE.
 You ALWAYS follow the "ADD", "REMOVE", "INPUT" and "OUTPUT FORMAT".
 You NEVER explain anything.
+You NEVER add KEYWORDS to the OUTPUT
 
 DOCS:
 "ADD" is a set of features that You write code for
 "REMOVE" is a set of things that should be removed or changed to something else
 "INPUT" is the code that should be EXTENDED, ADJUSTED or FIXED
-"OUTPUT FORMAT" is always JavaScript. the output should always be just JavaScript and NOTHING ELSE
+"OUTPUT FORMAT" is always pure valid  JavaScript. the output should always be just JavaScript and NOTHING ELSE
 
 You EXCLUSIVELY answer in the requested "OUTPUT FORMAT" and NOTHING ELSE
 `,

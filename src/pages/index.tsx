@@ -36,6 +36,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import Slider from "@mui/material/Slider";
 import { useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
+import Button from "@mui/material/Button";
 
 const base = {
 	default: `/** CHANGELOG
@@ -174,20 +175,19 @@ export default function Home() {
 					>
 						<AppBar position="static" elevation={0}>
 							<Toolbar>
-								<IconButton
+								<Button
 									type="submit"
-									edge="start"
-									color="inherit"
 									aria-label={loading ? "Loading" : "Run"}
 									aria-disabled={loading}
 									disabled={loading}
+									startIcon={
+										loading ? <CircularProgress size={24} /> : <PlayArrowIcon />
+									}
 								>
-									{loading ? <CircularProgress size={24} /> : <PlayArrowIcon />}
-								</IconButton>
-								<Typography sx={{ flex: 1 }}>
-									{loading
-										? "Loading …"
-										: `${current?.task} - ${current?.id ?? ""}`}
+									Run
+								</Button>
+								<Typography sx={{ flex: 1, pl: 1 }}>
+									{current?.task} - ${current?.id ?? ""}
 								</Typography>
 								<IconButton
 									edge="end"

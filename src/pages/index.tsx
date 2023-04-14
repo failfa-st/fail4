@@ -10,7 +10,6 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ReplayIcon from "@mui/icons-material/Replay";
 import TextField from "@mui/material/TextField";
@@ -179,10 +178,12 @@ export default function Home() {
 									aria-disabled={loading}
 									disabled={loading}
 								>
-									{loading ? <HourglassTopIcon /> : <PlayArrowIcon />}
+									{loading ? <CircularProgress size={24} /> : <PlayArrowIcon />}
 								</IconButton>
 								<Typography sx={{ flex: 1 }}>
-									{current?.task} - {current?.id ?? ""}
+									{loading
+										? "Loading …"
+										: `${current?.task} - ${current?.id ?? ""}`}
 								</Typography>
 								<IconButton
 									edge="end"

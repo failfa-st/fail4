@@ -1,5 +1,6 @@
 import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import { nanoid } from "nanoid";
+import process from "node:process";
 
 const configuration = new Configuration({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -26,35 +27,48 @@ function extractCode(string: string) {
 }
 
 export async function toOpenAI({
-	prompt = "",
+	prompt = "be creative",
 	negativePrompt = "",
 	template = "",
-}: Record<string, string>) {
+	temperature = "0.2",
+}) {
 	const negativePrompt_ = negativePrompt.trim();
 	const prompt_ = prompt.trim();
 
 	const nextMessage: ChatCompletionRequestMessage = {
 		role: "user",
 		content: miniPrompt`
-			DO: ${prompt_}
-			${negativePrompt_ ? `DONT: ${negativePrompt_}` : ""}
+			ADD: ${prompt_}
+			${negativePrompt_ ? `REMOVE: ${negativePrompt_}` : ""}
 			INPUT: ${template.trim()}
 			OUTPUT FORMAT: plain valid JavaScript
 		`,
 	};
 	const task = `${prompt_}${negativePrompt_ ? ` | not(${negativePrompt_})` : ""}`;
-	console.log(">>> NEXT MESSAGE CONTENT");
-	console.log(nextMessage.content);
-	console.log("<<<");
 
 	try {
 		const response = await openai.createChatCompletion({
 			model: "gpt-3.5-turbo",
-			temperature: 0.2,
+			temperature: Number.parseFloat(temperature),
 			messages: [
 				{
 					role: "system",
-					content: `You are a FULLSTACK DEVELOPER. You implement the "DO". You NEVER implement "DONT". You EXCLUSIVELY answer in the requested "OUTPUT FORMAT" and NOTHING ELSE. You ALWAYS follow the "DO", "DONT", "INPUT" and "OUTPUT FORMAT".`,
+					content: miniPrompt`
+All UPPERCASE words are IMPORTANT, all "UPPERCASE" words in QUOTES (") indicate KEYWORDS.
+You are: expert JavaScript Developer, creative, Canvas-2d expert, performance guru, interaction expert.
+You strictly follow all "DOCS".
+You extend "CHANGELOG" and the CODE.
+You ALWAYS follow the "ADD", "REMOVE", "INPUT" and "OUTPUT FORMAT".
+You NEVER explain anything.
+
+DOCS:
+"ADD" is a set of features that You write code for
+"REMOVE" is a set of things that should be removed or changed to something else
+"INPUT" is the code that should be EXTENDED, ADJUSTED or FIXED
+"OUTPUT FORMAT" is always JavaScript. the output should always be just JavaScript and NOTHING ELSE
+
+You EXCLUSIVELY answer in the requested "OUTPUT FORMAT" and NOTHING ELSE
+`,
 				},
 				nextMessage,
 			],

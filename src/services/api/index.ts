@@ -26,10 +26,11 @@ function extractCode(string: string) {
 }
 
 export async function toOpenAI({
-	prompt = "",
+	prompt = "be creative",
 	negativePrompt = "",
 	template = "",
-}: Record<string, string>) {
+	temperature = "0.2",
+}) {
 	const negativePrompt_ = negativePrompt.trim();
 	const prompt_ = prompt.trim();
 
@@ -47,7 +48,7 @@ export async function toOpenAI({
 	try {
 		const response = await openai.createChatCompletion({
 			model: "gpt-3.5-turbo",
-			temperature: 0.2,
+			temperature: Number.parseFloat(temperature),
 			messages: [
 				{
 					role: "system",

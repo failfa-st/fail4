@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import axios from "axios";
+import AcUnitIcon from "@mui/icons-material/AcUnit";
+import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
 import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -31,19 +33,20 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import { useHost } from "esdeka/react";
 import CircularProgress from "@mui/material/CircularProgress";
-import { miniPrompt } from "@/services/api";
 import CssBaseline from "@mui/material/CssBaseline";
+import Slider from "@mui/material/Slider";
 
 const base = {
-	default: miniPrompt`const canvas = document.querySelector('canvas');
-				const ctx = canvas.getContext('2d');
-				/*60FPS draw cycle*/
-				function draw(){
-					const FPS = 60;
-					setTimeout(requestAnimationFrame(draw),1000/FPS)
-				}
-				draw();
-			`,
+	default: `
+const canvas = document.querySelector('canvas');
+const ctx = canvas.getContext('2d');
+const FPS = 60;
+/*60FPS draw cycle*/
+function draw(){
+  setTimeout(requestAnimationFrame(draw),1000/FPS)
+}
+draw();
+	`.trim(),
 };
 
 const fontMono = Fira_Code({
@@ -190,6 +193,7 @@ export default function Home() {
 									edge="start"
 									color="inherit"
 									aria-label={loading ? "Loading" : "Run"}
+									aria-disabled={loading}
 									disabled={loading}
 								>
 									{loading ? <HourglassTopIcon /> : <PlayArrowIcon />}
@@ -223,7 +227,8 @@ export default function Home() {
 									id="prompt"
 									name="prompt"
 									label="Prompt"
-									placeholder="add a red box"
+									placeholder="add a red heart"
+									defaultValue="add a red heart"
 									maxRows={6}
 									InputProps={{
 										style: fontMono.style,
@@ -252,6 +257,26 @@ export default function Home() {
 								<Typography>Options</Typography>
 							</AccordionSummary>
 							<AccordionDetails>
+								<Stack
+									spacing={2}
+									direction="row"
+									sx={{ mb: 2 }}
+									alignItems="center"
+								>
+									<AcUnitIcon />
+									<Slider
+										marks
+										id="temperature"
+										name="temperature"
+										min={0}
+										max={0.8}
+										defaultValue={0.2}
+										step={0.1}
+										valueLabelDisplay="auto"
+										aria-label="Temperature"
+									/>
+									<LocalFireDepartmentIcon />
+								</Stack>
 								<TextField
 									multiline
 									fullWidth
@@ -297,6 +322,8 @@ export default function Home() {
 											<IconButton
 												edge="end"
 												aria-label="Show"
+												aria-disabled={runningId === answer.id}
+												disabled={runningId === answer.id}
 												onClick={() => {
 													setRunningId(answer.id);
 													reload();

@@ -11,6 +11,7 @@ const styles = (
 			height: 100%;
 			width: 100%;
 			overflow: hidden;
+		    background: white;
 		}
 		#__next {
 			display: contents;

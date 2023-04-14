@@ -34,6 +34,8 @@ import { useHost } from "esdeka/react";
 import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
 import Slider from "@mui/material/Slider";
+import { useAtom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 
 const base = {
 	default: `/** CHANGELOG
@@ -54,18 +56,20 @@ const fontMono = Fira_Code({
 	subsets: ["latin"],
 });
 
+const answersAtom = atomWithStorage<{ id: string; content: string; task: string }[]>("fail4", [
+	{
+		id: "1",
+		content: base.default,
+		task: "Base Script",
+	},
+]);
+
 export default function Home() {
 	const ref = useRef<HTMLIFrameElement>(null);
 	const [template, setTemplate] = useState(base.default);
 	const [runningId, setRunningId] = useState("1");
 	const [activeId, setActiveId] = useState("1");
-	const [answers, setAnswers] = useState<{ id: string; content: string; task: string }[]>([
-		{
-			id: "1",
-			content: base.default,
-			task: "Base Script",
-		},
-	]);
+	const [answers, setAnswers] = useAtom(answersAtom);
 	const [loading, setLoading] = useState(false);
 	const [loadingLive, setLoadingLive] = useState(true);
 

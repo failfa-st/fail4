@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 
-import Head from "next/head";
 import axios from "axios";
 import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -31,12 +30,20 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import { useHost } from "esdeka/react";
+import CircularProgress from "@mui/material/CircularProgress";
+import { miniPrompt } from "@/services/api";
+import CssBaseline from "@mui/material/CssBaseline";
 
 const base = {
-	default: `/** 1.Base Script */
-const canvas=document.querySelector('canvas');
-const ctx=canvas.getContext('2d');
-`,
+	default: miniPrompt`const canvas = document.querySelector('canvas');
+				const ctx = canvas.getContext('2d');
+				/*60FPS draw cycle*/
+				function draw(){
+					const FPS = 60;
+					setTimeout(requestAnimationFrame(draw),1000/FPS)
+				}
+				draw();
+			`,
 };
 
 const fontMono = Fira_Code({
@@ -56,6 +63,7 @@ export default function Home() {
 		},
 	]);
 	const [loading, setLoading] = useState(false);
+	const [loadingLive, setLoadingLive] = useState(true);
 
 	const { broadcast, call, subscribe } = useHost(ref, "fail4");
 
@@ -64,6 +72,7 @@ export default function Home() {
 
 	// Send a connection request
 	useEffect(() => {
+		const current = answers.find(({ id }) => id === runningId);
 		if (connection.current || tries <= 0) {
 			return () => {
 				/* Consistency */
@@ -71,24 +80,29 @@ export default function Home() {
 		}
 
 		const timeout = setTimeout(() => {
-			call({ template: "console.log('it works')" });
-			setTries(tries - 1);
-		}, 200);
+			if (current) {
+				call({ template: current.content });
+			}
 
-		call({ template: "console.log('it works')" });
+			setTries(tries - 1);
+		}, 1_000);
 
 		return () => {
 			clearTimeout(timeout);
 		};
-	}, [call, tries]);
+	}, [call, tries, answers, runningId]);
 
 	useEffect(() => {
-		if (!connection.current) {
+		if (!connection.current && loadingLive) {
 			const unsubscribe = subscribe(event => {
 				const { action } = event.data;
 				switch (action.type) {
 					case "answer":
 						connection.current = true;
+						setTimeout(() => {
+							setLoadingLive(false);
+						}, 1_500);
+						console.log("connected");
 						break;
 					default:
 						break;
@@ -101,7 +115,7 @@ export default function Home() {
 		return () => {
 			/* Consistency */
 		};
-	}, [subscribe]);
+	}, [subscribe, loadingLive]);
 
 	// Broadcast store to guest
 	useEffect(() => {
@@ -125,211 +139,244 @@ export default function Home() {
 
 	const current = answers.find(({ id }) => id === activeId);
 
+	function reload() {
+		connection.current = false;
+		if (ref.current) {
+			ref.current.src = `/live?${nanoid()}`;
+			setLoadingLive(true);
+			setTries(3);
+		}
+	}
+
 	return (
-		<Stack
-			sx={{
-				...fontMono.style,
-				flexDirection: "row",
-				height: "100%",
-			}}
-		>
-			<Head>
-				<style>{`html,body,#__next{margin:0;height:100%;overflow:hidden}`}</style>
-			</Head>
-			<Stack sx={{ width: "50%", flex: 1, gap: 2 }}>
-				<Box
-					component="form"
-					onSubmit={async event => {
-						event.preventDefault();
-						const formData = new FormData(event.target as HTMLFormElement);
-						const formObject = Object.fromEntries(formData);
-						try {
-							setLoading(true);
-							const { data } = await axios.post("/api/gpt", formObject);
-							const answer = data;
-							setAnswers([answer, ...answers]);
-							setRunningId(answer.id);
-						} catch (error) {
-							console.error(error);
-						} finally {
-							setLoading(false);
-						}
-					}}
-				>
+		<>
+			<CssBaseline />
+
+			<Stack
+				sx={{
+					...fontMono.style,
+					position: "absolute",
+					inset: 0,
+					overflow: "hidden",
+					flexDirection: "row",
+					height: "100%",
+				}}
+			>
+				<Stack sx={{ width: "50%", flex: 1, gap: 2 }}>
+					<Box
+						component="form"
+						onSubmit={async event => {
+							event.preventDefault();
+							const formData = new FormData(event.target as HTMLFormElement);
+							const formObject = Object.fromEntries(formData);
+							try {
+								setLoading(true);
+								const { data } = await axios.post("/api/gpt", formObject);
+								const answer = data;
+								setAnswers([answer, ...answers]);
+								setRunningId(answer.id);
+								reload();
+							} catch (error) {
+								console.error(error);
+							} finally {
+								setLoading(false);
+							}
+						}}
+					>
+						<AppBar position="static" elevation={0}>
+							<Toolbar>
+								<IconButton
+									type="submit"
+									edge="start"
+									color="inherit"
+									aria-label={loading ? "Loading" : "Run"}
+									disabled={loading}
+								>
+									{loading ? <HourglassTopIcon /> : <PlayArrowIcon />}
+								</IconButton>
+								<Typography sx={{ flex: 1 }}>
+									{current?.task} - {current?.id ?? ""}
+								</Typography>
+								<IconButton
+									edge="end"
+									color="inherit"
+									aria-label="Clear Prompt"
+									onClick={async () => {
+										broadcast({ template: base.default });
+										setActiveId("1");
+										setTemplate(base.default);
+										reload();
+									}}
+								>
+									<ClearIcon />
+								</IconButton>
+							</Toolbar>
+						</AppBar>
+						<Paper variant="outlined" sx={{ p: 0 }}>
+							<Stack sx={{ p: 2, gap: 2 }}>
+								<Typography>
+									Based on: {current?.task ?? "Base Script"} - {activeId}
+								</Typography>
+								<TextField
+									multiline
+									fullWidth
+									id="prompt"
+									name="prompt"
+									label="Prompt"
+									placeholder="add a red box"
+									maxRows={6}
+									InputProps={{
+										style: fontMono.style,
+									}}
+								/>
+								<TextField
+									multiline
+									fullWidth
+									id="negativePrompt"
+									name="negativePrompt"
+									label="Negative Prompt"
+									placeholder="images, audio files"
+									maxRows={6}
+									InputProps={{
+										style: fontMono.style,
+									}}
+								/>
+							</Stack>
+						</Paper>
+						<Accordion>
+							<AccordionSummary
+								expandIcon={<ExpandMoreIcon />}
+								aria-controls="panel1a-content"
+								id="panel1a-header"
+							>
+								<Typography>Options</Typography>
+							</AccordionSummary>
+							<AccordionDetails>
+								<TextField
+									multiline
+									fullWidth
+									id="template"
+									name="template"
+									label="Template"
+									placeholder={base.default}
+									maxRows={6}
+									value={template}
+									InputProps={{
+										style: { ...fontMono.style },
+									}}
+									onChange={event => {
+										setTemplate(event.target.value);
+									}}
+								/>
+							</AccordionDetails>
+						</Accordion>
+					</Box>
+
+					<List sx={{ flex: 1, overflow: "auto" }}>
+						{answers.map(answer => {
+							return (
+								<ListItem
+									key={answer.id}
+									secondaryAction={
+										<Stack sx={{ flexDirection: "row", gap: 1 }}>
+											{answer.id === "1" ? undefined : (
+												<IconButton
+													edge="end"
+													aria-label="Delete"
+													onClick={() => {
+														setAnswers(
+															answers.filter(
+																({ id }) => id !== answer.id
+															)
+														);
+													}}
+												>
+													<DeleteForeverIcon />
+												</IconButton>
+											)}
+											<IconButton
+												edge="end"
+												aria-label="Show"
+												onClick={() => {
+													setRunningId(answer.id);
+													reload();
+												}}
+											>
+												{runningId === answer.id ? (
+													<VisibilityIcon />
+												) : (
+													<VisibilityOffIcon />
+												)}
+											</IconButton>
+										</Stack>
+									}
+									disablePadding
+								>
+									<ListItemButton
+										dense
+										selected={activeId === answer.id}
+										role={undefined}
+										onClick={() => {
+											setActiveId(answer.id);
+											setTemplate(answer.content);
+										}}
+									>
+										<ListItemIcon>
+											{activeId === answer.id ? (
+												<CheckIcon />
+											) : (
+												<ContentCopyIcon />
+											)}
+										</ListItemIcon>
+										<ListItemText primary={`${answer.task} - ${answer.id}`} />
+									</ListItemButton>
+								</ListItem>
+							);
+						})}
+					</List>
+				</Stack>
+				<Stack sx={{ flex: 1, width: "50%", position: "relative" }}>
 					<AppBar position="static" elevation={0}>
 						<Toolbar>
 							<IconButton
-								type="submit"
-								edge="start"
 								color="inherit"
-								aria-label={loading ? "Loading" : "Run"}
-								disabled={loading}
-							>
-								{loading ? <HourglassTopIcon /> : <PlayArrowIcon />}
-							</IconButton>
-							<Typography sx={{ flex: 1 }}>
-								{current?.task} - {current?.id ?? ""}
-							</Typography>
-							<IconButton
-								edge="end"
-								color="inherit"
-								aria-label="Clear Prompt"
-								onClick={async () => {
-									broadcast({ template: base.default });
-
-									//await axios.post("/api/run", {
-									//	content:
-									//		base.default,
-									//});
-									setActiveId("1");
-									setTemplate(base.default);
+								aria-label="Reload"
+								onClick={() => {
+									reload();
 								}}
 							>
-								<ClearIcon />
+								<ReplayIcon />
 							</IconButton>
 						</Toolbar>
 					</AppBar>
-					<Paper variant="outlined" sx={{ p: 0 }}>
-						<Stack sx={{ p: 2, gap: 2 }}>
-							<Typography>Based on: {current?.task ?? "Base Script"}</Typography>
-							<TextField
-								multiline
-								fullWidth
-								id="prompt"
-								name="prompt"
-								label="Prompt"
-								placeholder="add a red box"
-								maxRows={6}
-								InputProps={{
-									style: fontMono.style,
-								}}
-							/>
-							<TextField
-								multiline
-								fullWidth
-								id="negativePrompt"
-								name="negativePrompt"
-								label="Negative Prompt"
-								placeholder="images, audio files"
-								maxRows={6}
-								InputProps={{
-									style: fontMono.style,
-								}}
-							/>
-						</Stack>
-					</Paper>
-					<Accordion>
-						<AccordionSummary
-							expandIcon={<ExpandMoreIcon />}
-							aria-controls="panel1a-content"
-							id="panel1a-header"
-						>
-							<Typography>Options</Typography>
-						</AccordionSummary>
-						<AccordionDetails>
-							<TextField
-								multiline
-								fullWidth
-								id="template"
-								name="template"
-								label="Template"
-								placeholder={base.default}
-								maxRows={6}
-								value={template}
-								InputProps={{
-									style: { ...fontMono.style },
-								}}
-								onChange={event => {
-									setTemplate(event.target.value);
-								}}
-							/>
-						</AccordionDetails>
-					</Accordion>
-				</Box>
-
-				<List sx={{ flex: 1, overflow: "auto" }}>
-					{answers.map(answer => {
-						return (
-							<ListItem
-								key={answer.id}
-								secondaryAction={
-									<Stack sx={{ flexDirection: "row", gap: 1 }}>
-										{answer.id === "1" ? undefined : (
-											<IconButton
-												edge="end"
-												aria-label="Delete"
-												onClick={() => {
-													setAnswers(
-														answers.filter(({ id }) => id !== answer.id)
-													);
-												}}
-											>
-												<DeleteForeverIcon />
-											</IconButton>
-										)}
-										<IconButton
-											edge="end"
-											aria-label="Show"
-											onClick={() => {
-												setRunningId(answer.id);
-											}}
-										>
-											{runningId === answer.id ? (
-												<VisibilityIcon />
-											) : (
-												<VisibilityOffIcon />
-											)}
-										</IconButton>
-									</Stack>
-								}
-								disablePadding
-							>
-								<ListItemButton
-									dense
-									selected={activeId === answer.id}
-									role={undefined}
-									onClick={() => {
-										setActiveId(answer.id);
-										setTemplate(answer.content);
-									}}
-								>
-									<ListItemIcon>
-										{activeId === answer.id ? (
-											<CheckIcon />
-										) : (
-											<ContentCopyIcon />
-										)}
-									</ListItemIcon>
-									<ListItemText primary={`${answer.task} - ${answer.id}`} />
-								</ListItemButton>
-							</ListItem>
-						);
-					})}
-				</List>
-			</Stack>
-			<Stack sx={{ flex: 1, width: "50%" }}>
-				<AppBar position="static" elevation={0}>
-					<Toolbar>
-						<IconButton
-							color="inherit"
-							aria-label="Reload"
-							onClick={() => {
-								if (ref.current) {
-									ref.current.src = `//localhost:8080?${nanoid()}`;
-								}
+					{loadingLive && (
+						<Box
+							sx={{
+								position: "absolute",
+								zIndex: 100,
+								top: "50%",
+								left: "50%",
+								transform: "translate(-50%,-50%)",
 							}}
 						>
-							<ReplayIcon />
-						</IconButton>
-					</Toolbar>
-				</AppBar>
-				<Box
-					ref={ref}
-					component="iframe"
-					sx={{ width: "100%", flex: 1, m: 0, border: 0 }}
-					src="/live"
-				/>
+							<CircularProgress />
+						</Box>
+					)}
+					<Box
+						ref={ref}
+						component="iframe"
+						sx={{
+							width: "100%",
+							flex: 1,
+							m: 0,
+							border: 0,
+							overflow: "hidden",
+							visibility: loadingLive ? "hidden" : undefined,
+						}}
+						src="/live"
+					/>
+				</Stack>
 			</Stack>
-		</Stack>
+		</>
 	);
 }

@@ -36,16 +36,13 @@ export async function toOpenAI({
 	const nextMessage: ChatCompletionRequestMessage = {
 		role: "user",
 		content: miniPrompt`
-			DO: ${prompt_}
-			${negativePrompt_ ? `DONT: ${negativePrompt_}` : ""}
+			ADD: ${prompt_}
+			${negativePrompt_ ? `REMOVE: ${negativePrompt_}` : ""}
 			INPUT: ${template.trim()}
 			OUTPUT FORMAT: plain valid JavaScript
 		`,
 	};
 	const task = `${prompt_}${negativePrompt_ ? ` | not(${negativePrompt_})` : ""}`;
-	console.log(">>> NEXT MESSAGE CONTENT");
-	console.log(nextMessage.content);
-	console.log("<<<");
 
 	try {
 		const response = await openai.createChatCompletion({
@@ -54,7 +51,22 @@ export async function toOpenAI({
 			messages: [
 				{
 					role: "system",
-					content: `You are a FULLSTACK DEVELOPER. You implement the "DO". You NEVER implement "DONT". You EXCLUSIVELY answer in the requested "OUTPUT FORMAT" and NOTHING ELSE. You ALWAYS follow the "DO", "DONT", "INPUT" and "OUTPUT FORMAT".`,
+					content: miniPrompt`
+All UPPERCASE words are IMPORTANT, all "UPPERCASE" words in QUOTES (") indicate KEYWORDS,
+You are an expert JavaScript Developer, with a creative mindset.
+You are a Canvas-2d expert and performance guru.
+You strictly follow all "DOCS".
+You ALWAYS follow the "ADD", "REMOVE", "INPUT" and "OUTPUT FORMAT".
+You NEVER explain anything.
+
+DOCS:
+"ADD" is a set of features that You write code for
+"REMOVE" is a set of things that should be removed or changed to something else
+"INPUT" is the code that should be EXTENDED, ADJUSTED or FIXED
+"OUTPUT FORMAT" is always JavaScript. the output should always be just JavaScript and NOTHING ELSE
+
+You EXCLUSIVELY answer in the requested "OUTPUT FORMAT" and NOTHING ELSE
+`,
 				},
 				nextMessage,
 			],

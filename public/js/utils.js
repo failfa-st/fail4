@@ -50,17 +50,20 @@ function answer(window_, channel, targetOrigin = "*") {
 }
 
 function handleTemplate(template) {
-	for (let i = 1; i < 100_000_000; i++) {
+	for (let i = 1; i < 1_000; i++) {
 		window.clearInterval(i);
 		window.cancelAnimationFrame(i);
 		window.clearTimeout(i);
 	}
 
-	Function("Template", `${template};`)();
+	try {
+		Function("Template", `${template};`)();
+	} catch (error) {
+		console.log(error);
+	}
 }
 
 subscribe("fail4", event => {
-	console.log("GUEST", event);
 	const { action } = event.data;
 	switch (action.type) {
 		case "call":
@@ -70,7 +73,6 @@ subscribe("fail4", event => {
 			handleTemplate(action.payload.template);
 			break;
 		case "broadcast":
-			console.log("broadcast", action.payload.template);
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			handleTemplate(action.payload.template);
 			break;

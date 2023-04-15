@@ -212,6 +212,7 @@ export default function Home() {
 								onClick={async () => {
 									// broadcast({ template: base.default });
 									setActiveId("1");
+									setRunningId("1");
 									setTemplate(prettify(base.default));
 									reload();
 								}}

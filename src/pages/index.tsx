@@ -255,6 +255,7 @@ export default function Home() {
 									setAnswers(previousAnswers => [answer, ...previousAnswers]);
 									setRunningId(answer.id);
 									setActiveId(answer.id);
+									setTemplate(prettify(answer.content));
 									reload();
 								} catch (error) {
 									console.error(error);
@@ -329,6 +330,7 @@ export default function Home() {
 										id="template"
 										name="template"
 										type="hidden"
+										value={template}
 										onChange={event => {
 											setTemplate(event.target.value);
 										}}

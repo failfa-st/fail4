@@ -187,7 +187,7 @@ export default function Home() {
 									Run
 								</Button>
 								<Typography sx={{ flex: 1, pl: 1 }}>
-									{current?.task} - ${current?.id ?? ""}
+									{current?.task} - {current?.id ?? ""}
 								</Typography>
 								<IconButton
 									edge="end"

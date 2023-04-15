@@ -12,7 +12,7 @@ import { AppType } from "next/app";
 import theme, { roboto } from "@/lib/theme";
 import createEmotionCache from "@/lib/createEmotionCache";
 import { MyAppProps } from "./_app";
-
+import { getInitColorSchemeScript } from "@mui/material/styles";
 interface MyDocumentProps extends DocumentProps {
 	emotionStyleTags: JSX.Element[];
 }
@@ -28,6 +28,7 @@ export default function MyDocument({ emotionStyleTags }: MyDocumentProps) {
 				{emotionStyleTags}
 			</Head>
 			<body>
+				{getInitColorSchemeScript()}
 				<Main />
 				<NextScript />
 			</body>

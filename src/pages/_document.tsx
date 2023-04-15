@@ -21,7 +21,6 @@ export default function MyDocument({ emotionStyleTags }: MyDocumentProps) {
 	return (
 		<Html lang="en" className={roboto.className}>
 			<Head>
-				{/* PWA primary color */}
 				<link rel="shortcut icon" href="/favicon.ico" />
 				<meta name="emotion-insertion-point" content="" />
 				{emotionStyleTags}

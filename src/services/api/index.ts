@@ -40,8 +40,11 @@ export async function toOpenAI({
 		content: miniPrompt`
 			ADD: ${prompt_}
 			${negativePrompt_ ? `REMOVE: ${negativePrompt_}` : ""}
-			INPUT: ${template.trim().replace(/^\s+/gm, "").replace(/^\n+/g, "").replace(/\s+/, " ")}
-		`,
+			TEMPLATE:
+			\`\`\`js
+			${template.trim().replace(/^\s+/gm, "").replace(/^\n+/g, "").replace(/\s+/, " ")}
+			\`\`\`
+			`,
 	};
 	console.log("<<< INPUT Message >>>");
 	console.log(nextMessage.content);
@@ -60,15 +63,10 @@ You are an expert JavaScript developer with a creative mindset and a specializat
 You have a keen eye for performance optimization and are highly skilled in creating interactive experiences.
 You always adhere to documentation and meticulously extend the "CHANGELOG" and code.
 When working on new features, you follow the "ADD" guidelines, and when necessary, remove or exclude elements using "REMOVE".
-You also pay close attention to "INPUT" code, extending or fixing it as needed.
+You also pay close attention to "TEMPLATE" code, extending or fixing it as needed.
 Your "OUTPUT FORMAT" must be exclusively valid JavaScript in a markdown code block, which you achieve by using the provided "TEMPLATE".
 
-TEMPLATE:
-\`\`\`js
-// Code here
-\`\`\`
-
-And remember, the "ADD", "REMOVE", "INPUT", and "OUTPUT FORMAT" guidelines are crucial to follow for optimal results.
+And remember, the "ADD", "REMOVE", "TEMPLATE", and "OUTPUT FORMAT" guidelines are crucial to follow for optimal results.
 `,
 				},
 				nextMessage,
@@ -84,7 +82,7 @@ And remember, the "ADD", "REMOVE", "INPUT", and "OUTPUT FORMAT" guidelines are c
 			return {
 				...message,
 				content: extractCode(message.content).replace(
-					/(ADD|INPUT|OUTPUT FORMAT|REMOVE).*\n/,
+					/(ADD|TEMPLATE|OUTPUT FORMAT|REMOVE).*\n/,
 					""
 				),
 				task,

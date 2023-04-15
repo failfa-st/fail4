@@ -254,6 +254,7 @@ export default function Home() {
 									const answer = data;
 									setAnswers(previousAnswers => [answer, ...previousAnswers]);
 									setRunningId(answer.id);
+									setActiveId(answer.id);
 									reload();
 								} catch (error) {
 									console.error(error);
@@ -354,6 +355,7 @@ export default function Home() {
 																)
 															);
 															if (runningId === answer.id) {
+																setActiveId("1");
 																setRunningId("1");
 																setTemplate(prettify(base.default));
 																reload();

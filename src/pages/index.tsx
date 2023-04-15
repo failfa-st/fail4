@@ -169,13 +169,11 @@ export default function Home() {
 				}}
 			>
 				<Stack sx={{ width: "50%", flex: 1 }}>
-					<AppBar position="static" elevation={0}>
+					<AppBar position="static" elevation={0} color="default">
 						<Toolbar>
 							<Button
 								form="gpt-form"
 								type="submit"
-								variant="outlined"
-								color="inherit"
 								aria-label={loading ? "Loading" : "Run"}
 								aria-disabled={loading}
 								disabled={loading}
@@ -408,7 +406,7 @@ export default function Home() {
 					</Stack>
 				</Stack>
 				<Stack sx={{ flex: 1, width: "50%", position: "relative" }}>
-					<AppBar position="static" elevation={0}>
+					<AppBar position="static" elevation={0} color="default">
 						<Toolbar>
 							<IconButton
 								color="inherit"

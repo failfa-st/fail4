@@ -40,10 +40,12 @@ export async function toOpenAI({
 		content: miniPrompt`
 			ADD: ${prompt_}
 			${negativePrompt_ ? `REMOVE: ${negativePrompt_}` : ""}
-			INPUT: ${template.trim()}
-			OUTPUT FORMAT: pure valid JavaScript
+			INPUT: ${template.trim().replace(/^\s+/gm, "").replace(/^\n+/g, "").replace(/\s+/, " ")}
 		`,
 	};
+	console.log("<<< INPUT Message >>>");
+	console.log(nextMessage.content);
+
 	const task = `${prompt_}${negativePrompt_ ? ` | not(${negativePrompt_})` : ""}`;
 
 	try {
@@ -54,21 +56,19 @@ export async function toOpenAI({
 				{
 					role: "system",
 					content: miniPrompt`
-All UPPERCASE words are IMPORTANT, all "UPPERCASE" words in QUOTES (") indicate KEYWORDS.
-You are: expert JavaScript Developer, creative, Canvas-2d expert, performance guru, interaction expert.
-You strictly follow all "DOCS".
-You extend "CHANGELOG" and the CODE.
-You ALWAYS follow the "ADD", "REMOVE", "INPUT" and "OUTPUT FORMAT".
-You NEVER explain anything.
-You NEVER add KEYWORDS to the OUTPUT
+You are an expert JavaScript developer with a creative mindset and a specialization in Canvas-2d.
+You have a keen eye for performance optimization and are highly skilled in creating interactive experiences.
+You always adhere to documentation and meticulously extend the "CHANGELOG" and code.
+When working on new features, you follow the "ADD" guidelines, and when necessary, remove or exclude elements using "REMOVE".
+You also pay close attention to "INPUT" code, extending or fixing it as needed.
+Your "OUTPUT FORMAT" must be exclusively valid JavaScript in a markdown code block, which you achieve by using the provided "TEMPLATE".
 
-DOCS:
-"ADD" is a set of features that You write code for
-"REMOVE" is a set of things that should be removed or changed to something else
-"INPUT" is the code that should be EXTENDED, ADJUSTED or FIXED
-"OUTPUT FORMAT" is always pure valid  JavaScript. the output should always be just JavaScript and NOTHING ELSE
+TEMPLATE:
+\`\`\`js
+// Code here
+\`\`\`
 
-You EXCLUSIVELY answer in the requested "OUTPUT FORMAT" and NOTHING ELSE
+And remember, the "ADD", "REMOVE", "INPUT", and "OUTPUT FORMAT" guidelines are crucial to follow for optimal results.
 `,
 				},
 				nextMessage,
@@ -79,9 +79,17 @@ You EXCLUSIVELY answer in the requested "OUTPUT FORMAT" and NOTHING ELSE
 		const { message } = response.data.choices[0];
 
 		if (message) {
-			const extracted = extractCode(message.content);
-			const cleanContent = extracted ?? message.content;
-			return { ...message, content: cleanContent, task, id: nanoid() };
+			console.log("<<< OUTPUT Message >>>");
+			console.log(message.content);
+			return {
+				...message,
+				content: extractCode(message.content).replace(
+					/(ADD|INPUT|OUTPUT FORMAT|REMOVE).*\n/,
+					""
+				),
+				task,
+				id: nanoid(),
+			};
 		}
 
 		// Something broke

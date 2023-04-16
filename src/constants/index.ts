@@ -4,7 +4,13 @@ export const base = {
  */
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
-/*
+/**
+ * Always use this random function
+ */
+function random() {
+	return Math.random()
+}
+/**
  * The draw function is called every frame to update the canvas.
  * To change the drawing logic, modify the code inside this function.
  */

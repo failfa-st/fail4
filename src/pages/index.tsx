@@ -5,15 +5,17 @@ import AcUnitIcon from "@mui/icons-material/AcUnit";
 import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
 import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import CodeIcon from "@mui/icons-material/Code";
+import CodeOffIcon from "@mui/icons-material/CodeOff";
+import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ReplayIcon from "@mui/icons-material/Replay";
+import MoneyIcon from "@mui/icons-material/Money";
+import TollIcon from "@mui/icons-material/Toll";
 import TextField from "@mui/material/TextField";
-import { Fira_Code } from "next/font/google";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Accordion from "@mui/material/Accordion";
@@ -35,46 +37,34 @@ import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
 import Slider from "@mui/material/Slider";
 import { useAtom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
 import Button from "@mui/material/Button";
+import dynamic from "next/dynamic";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import { fontMono } from "@/lib/theme";
+import { useColorScheme } from "@mui/material/styles";
+import { getTheme, prettify } from "@/utils";
+import { answersAtom, showCodeAtom } from "@/store/atoms";
+import { base } from "@/constants";
+import { EditTitle } from "@/components/EditTitle";
 
-const base = {
-	default: `/** CHANGELOG
- * 1. Set up canvas
- */
-const canvas = document.querySelector('canvas');
-const ctx = canvas.getContext('2d');
-/*60FPS draw cycle*/
-function draw(){
-  const FPS = 60;
-  setTimeout(requestAnimationFrame(draw),1000/FPS)
-}
-draw();
-	`.trim(),
-};
-
-const fontMono = Fira_Code({
-	subsets: ["latin"],
-});
-
-const answersAtom = atomWithStorage<{ id: string; content: string; task: string }[]>("fail4", [
-	{
-		id: "1",
-		content: base.default,
-		task: "Base Script",
-	},
-]);
+const MonacoEditor = dynamic(import("@monaco-editor/react"), { ssr: false });
 
 export default function Home() {
 	const ref = useRef<HTMLIFrameElement>(null);
-	const [template, setTemplate] = useState(base.default);
+	const [template, setTemplate] = useState(prettify(base.default));
 	const [runningId, setRunningId] = useState("1");
 	const [activeId, setActiveId] = useState("1");
+	const [editingId, setEditingId] = useState<string | null>(null);
 	const [answers, setAnswers] = useAtom(answersAtom);
+	const [showCode, setShowCode] = useAtom(showCodeAtom);
 	const [loading, setLoading] = useState(false);
 	const [loadingLive, setLoadingLive] = useState(true);
+	const { mode, systemMode } = useColorScheme();
 
-	const { broadcast, call, subscribe } = useHost(ref, "fail4");
+	const { call, subscribe } = useHost(ref, "fail4");
 
 	const connection = useRef(false);
 	const [tries, setTries] = useState(1);
@@ -90,8 +80,6 @@ export default function Home() {
 
 		const timeout = setTimeout(() => {
 			if (current) {
-				// call({ template: "" });
-
 				call({ template: current.content });
 			}
 
@@ -141,7 +129,6 @@ export default function Home() {
 	return (
 		<>
 			<CssBaseline />
-
 			<Stack
 				sx={{
 					...fontMono.style,
@@ -152,211 +139,315 @@ export default function Home() {
 					height: "100%",
 				}}
 			>
-				<Stack sx={{ width: "50%", flex: 1, gap: 2 }}>
-					<Box
-						component="form"
-						onSubmit={async event => {
-							event.preventDefault();
-							const formData = new FormData(event.target as HTMLFormElement);
-							const formObject = Object.fromEntries(formData);
-							try {
-								setLoading(true);
-								const { data } = await axios.post("/api/gpt", formObject);
-								const answer = data;
-								setAnswers(previousAnswers => [answer, ...previousAnswers]);
-								setRunningId(answer.id);
-								reload();
-							} catch (error) {
-								console.error(error);
-							} finally {
-								setLoading(false);
-							}
-						}}
-					>
-						<AppBar position="static" elevation={0}>
-							<Toolbar>
-								<Button
-									type="submit"
-									aria-label={loading ? "Loading" : "Run"}
-									aria-disabled={loading}
-									disabled={loading}
-									startIcon={
-										loading ? <CircularProgress size={24} /> : <PlayArrowIcon />
-									}
-								>
-									Run
-								</Button>
-								<Typography sx={{ flex: 1, pl: 1 }}>
-									{current?.task} - {current?.id ?? ""}
-								</Typography>
-								<IconButton
-									edge="end"
-									color="inherit"
-									aria-label="Clear Prompt"
-									onClick={async () => {
-										// broadcast({ template: base.default });
-										setActiveId("1");
-										setTemplate(base.default);
-										reload();
-									}}
-								>
-									<ClearIcon />
-								</IconButton>
-							</Toolbar>
-						</AppBar>
-						<Paper variant="outlined" sx={{ p: 0 }}>
-							<Stack sx={{ p: 2, gap: 2 }}>
-								<Typography>
-									Based on: {current?.task ?? "Base Script"} - {activeId}
-								</Typography>
-								<TextField
-									multiline
-									fullWidth
-									id="prompt"
-									name="prompt"
-									label="Prompt"
-									placeholder="red heart"
-									defaultValue="red heart"
-									maxRows={6}
-									InputProps={{
-										style: fontMono.style,
-									}}
-								/>
-								<TextField
-									multiline
-									fullWidth
-									id="negativePrompt"
-									name="negativePrompt"
-									label="Negative Prompt"
-									placeholder="images, audio files"
-									maxRows={6}
-									InputProps={{
-										style: fontMono.style,
-									}}
-								/>
-							</Stack>
-						</Paper>
-						<Accordion>
-							<AccordionSummary
-								expandIcon={<ExpandMoreIcon />}
-								aria-controls="panel1a-content"
-								id="panel1a-header"
+				<Stack sx={{ width: "50%", flex: 1 }}>
+					<AppBar position="static" elevation={0} color="default">
+						<Toolbar>
+							<Button
+								form="gpt-form"
+								type="submit"
+								aria-label={loading ? "Loading" : "Run"}
+								aria-disabled={loading}
+								disabled={loading}
+								startIcon={
+									loading ? <CircularProgress size={20} /> : <PlayArrowIcon />
+								}
 							>
-								<Typography>Options</Typography>
-							</AccordionSummary>
-							<AccordionDetails>
-								<Stack
-									spacing={2}
-									direction="row"
-									sx={{ mb: 2 }}
-									alignItems="center"
-								>
-									<AcUnitIcon />
-									<Slider
-										marks
-										id="temperature"
-										name="temperature"
-										min={0}
-										max={0.8}
-										defaultValue={0.2}
-										step={0.1}
-										valueLabelDisplay="auto"
-										aria-label="Temperature"
-									/>
-									<LocalFireDepartmentIcon />
-								</Stack>
-								<TextField
-									multiline
-									fullWidth
-									id="template"
-									name="template"
-									label="Template"
-									placeholder={base.default}
-									maxRows={10}
-									value={template}
-									InputProps={{
-										style: { ...fontMono.style },
-									}}
-									onChange={event => {
-										setTemplate(event.target.value);
+								Run
+							</Button>
+
+							{current?.id === editingId ? (
+								<EditTitle
+									value={current.task}
+									onSave={value => {
+										setEditingId(null);
+										setAnswers(previousAnswers =>
+											previousAnswers.map(answer_ =>
+												current.id === answer_.id
+													? {
+															...answer_,
+															task: value,
+													  }
+													: answer_
+											)
+										);
 									}}
 								/>
-							</AccordionDetails>
-						</Accordion>
-					</Box>
-
-					<List sx={{ flex: 1, overflow: "auto" }}>
-						{answers.map(answer => {
-							return (
-								<ListItem
-									key={answer.id}
-									secondaryAction={
-										<Stack sx={{ flexDirection: "row", gap: 1 }}>
-											{answer.id === "1" ? undefined : (
-												<IconButton
-													edge="end"
-													aria-label="Delete"
-													onClick={() => {
-														setAnswers(previousAnswers =>
-															previousAnswers.filter(
-																({ id }) => id !== answer.id
-															)
-														);
-														if (runningId === answer.id) {
-															setRunningId("1");
-															setTemplate(base.default);
-															reload();
-														}
-													}}
-												>
-													<DeleteForeverIcon />
-												</IconButton>
-											)}
-											<IconButton
-												edge="end"
-												aria-label="Show"
-												aria-disabled={runningId === answer.id}
-												disabled={runningId === answer.id}
-												onClick={() => {
-													setRunningId(answer.id);
-													reload();
-												}}
-											>
-												{runningId === answer.id ? (
-													<VisibilityIcon />
-												) : (
-													<VisibilityOffIcon />
-												)}
-											</IconButton>
-										</Stack>
-									}
-									disablePadding
-								>
-									<ListItemButton
-										dense
-										selected={activeId === answer.id}
-										role={undefined}
-										onClick={() => {
-											setActiveId(answer.id);
-											setTemplate(answer.content);
+							) : (
+								<>
+									<Typography
+										sx={{
+											flex: 1,
+											pl: 3,
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
 										}}
 									>
-										<ListItemIcon>
-											{activeId === answer.id ? (
-												<CheckIcon />
-											) : (
-												<ContentCopyIcon />
-											)}
-										</ListItemIcon>
-										<ListItemText primary={`${answer.task} - ${answer.id}`} />
-									</ListItemButton>
-								</ListItem>
-							);
-						})}
-					</List>
+										{current?.task}
+									</Typography>
+									<IconButton
+										onClick={() => {
+											if (current) {
+												setEditingId(current.id);
+											}
+										}}
+									>
+										<EditIcon />
+									</IconButton>
+								</>
+							)}
+
+							<IconButton
+								color="inherit"
+								aria-label={showCode ? "Hide Code" : "Show Code"}
+								onClick={() => {
+									setShowCode(previousState => !previousState);
+								}}
+							>
+								{showCode ? <CodeOffIcon /> : <CodeIcon />}
+							</IconButton>
+							<IconButton
+								edge="end"
+								color="inherit"
+								aria-label="Clear Prompt"
+								onClick={async () => {
+									setActiveId("1");
+									setRunningId("1");
+									setTemplate(prettify(base.default));
+									reload();
+								}}
+							>
+								<ClearIcon />
+							</IconButton>
+						</Toolbar>
+					</AppBar>
+					{showCode && (
+						<Box sx={{ flex: 1 }}>
+							<MonacoEditor
+								theme={getTheme(mode, systemMode)}
+								language="javascript"
+								value={template}
+								options={{
+									fontSize: 14,
+								}}
+								onChange={async value => {
+									console.log(value);
+									setTemplate(value ?? "");
+								}}
+							/>
+						</Box>
+					)}
+					<Stack
+						sx={{ flex: 1, display: showCode ? "none" : undefined, overflow: "hidden" }}
+					>
+						<Box
+							component="form"
+							id="gpt-form"
+							onSubmit={async event => {
+								event.preventDefault();
+								const formData = new FormData(event.target as HTMLFormElement);
+								const formObject = Object.fromEntries(formData);
+								try {
+									setLoading(true);
+									const { data } = await axios.post("/api/gpt", formObject);
+									const answer = data;
+									setAnswers(previousAnswers => [answer, ...previousAnswers]);
+									setRunningId(answer.id);
+									setActiveId(answer.id);
+									setTemplate(prettify(answer.content));
+									reload();
+								} catch (error) {
+									console.error(error);
+								} finally {
+									setLoading(false);
+								}
+							}}
+						>
+							<Paper variant="outlined" sx={{ p: 0 }}>
+								<Stack sx={{ p: 2, gap: 2 }}>
+									<TextField
+										multiline
+										fullWidth
+										id="prompt"
+										name="prompt"
+										label="Prompt"
+										placeholder="matrix code"
+										defaultValue="matrix code"
+										maxRows={6}
+										InputProps={{
+											style: fontMono.style,
+										}}
+									/>
+									<TextField
+										multiline
+										fullWidth
+										id="negativePrompt"
+										name="negativePrompt"
+										label="Negative Prompt"
+										placeholder="images, audio files"
+										maxRows={6}
+										InputProps={{
+											style: fontMono.style,
+										}}
+									/>
+								</Stack>
+							</Paper>
+							<Accordion disableGutters square elevation={0}>
+								<AccordionSummary
+									expandIcon={<ExpandMoreIcon />}
+									aria-controls="gtp-options-content"
+									id="gtp-options-header"
+									sx={{
+										bgcolor: "background.paper",
+										color: "text.primary",
+									}}
+								>
+									<Typography>Options</Typography>
+								</AccordionSummary>
+								<AccordionDetails>
+									<FormControl fullWidth variant="outlined" sx={{ mb: 3 }}>
+										<InputLabel id="gpt-model-select-label">Model</InputLabel>
+										<Select
+											labelId="gpt-model-select-label"
+											id="gpt-model-select"
+											name="model"
+											defaultValue="gpt-3.5-turbo"
+											label="Model"
+										>
+											<MenuItem value="gpt-3.5-turbo">GPT 3.5 turbo</MenuItem>
+											<MenuItem value="gpt-4">GPT 4</MenuItem>
+										</Select>
+									</FormControl>
+									<Stack
+										spacing={2}
+										direction="row"
+										sx={{ mb: 2 }}
+										alignItems="center"
+									>
+										<AcUnitIcon />
+										<Slider
+											marks
+											id="temperature"
+											name="temperature"
+											min={0}
+											max={0.8}
+											defaultValue={0.2}
+											step={0.1}
+											valueLabelDisplay="auto"
+											aria-label="Temperature"
+										/>
+										<LocalFireDepartmentIcon />
+									</Stack>
+									<Stack
+										spacing={2}
+										direction="row"
+										sx={{ mb: 2 }}
+										alignItems="center"
+									>
+										<TollIcon />
+										<Slider
+											marks
+											id="maxTokens"
+											name="maxTokens"
+											min={1024}
+											max={4096}
+											defaultValue={2048}
+											step={256}
+											valueLabelDisplay="auto"
+											aria-label="Max Tokens"
+										/>
+										<MoneyIcon />
+									</Stack>
+									<input
+										id="template"
+										name="template"
+										type="hidden"
+										value={template}
+										onChange={event => {
+											setTemplate(event.target.value);
+										}}
+									/>
+								</AccordionDetails>
+							</Accordion>
+						</Box>
+
+						<List sx={{ flex: 1, overflow: "auto" }}>
+							{answers.map((answer, index) => {
+								return (
+									<ListItem
+										key={answer.id}
+										secondaryAction={
+											<Stack sx={{ flexDirection: "row", gap: 1 }}>
+												{answer.id === "1" ? undefined : (
+													<IconButton
+														edge="end"
+														aria-label="Delete"
+														onClick={() => {
+															setAnswers(previousAnswers =>
+																previousAnswers.filter(
+																	({ id }) => id !== answer.id
+																)
+															);
+															if (runningId === answer.id) {
+																const previous = answers[index + 1];
+																if (previous) {
+																	setActiveId(previous.id);
+																	setRunningId(previous.id);
+																	setTemplate(
+																		prettify(previous.task)
+																	);
+																	reload();
+																}
+															}
+														}}
+													>
+														<DeleteForeverIcon />
+													</IconButton>
+												)}
+											</Stack>
+										}
+										disablePadding
+									>
+										<ListItemButton
+											dense
+											selected={activeId === answer.id}
+											disabled={activeId === answer.id}
+											role={undefined}
+											onClick={() => {
+												setActiveId(answer.id);
+												setRunningId(answer.id);
+												setTemplate(prettify(answer.content));
+												reload();
+											}}
+										>
+											<ListItemIcon>
+												{runningId === answer.id ? (
+													<CheckIcon />
+												) : (
+													<VisibilityIcon />
+												)}
+											</ListItemIcon>
+
+											<ListItemText
+												primary={answer.task}
+												primaryTypographyProps={{
+													sx: {
+														overflow: "hidden",
+														textOverflow: "ellipsis",
+														whiteSpace: "nowrap",
+														fontSize: 16,
+													},
+												}}
+											/>
+										</ListItemButton>
+									</ListItem>
+								);
+							})}
+						</List>
+					</Stack>
 				</Stack>
 				<Stack sx={{ flex: 1, width: "50%", position: "relative" }}>
-					<AppBar position="static" elevation={0}>
+					<AppBar position="static" elevation={0} color="default">
 						<Toolbar>
 							<IconButton
 								color="inherit"

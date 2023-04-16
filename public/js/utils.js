@@ -1,5 +1,4 @@
 const canvas = document.querySelector("#canvas");
-const ctx = canvas.getContext("2d");
 
 function handleResize() {
 	requestAnimationFrame(() => {
@@ -50,11 +49,7 @@ function answer(window_, channel, targetOrigin = "*") {
 }
 
 function handleTemplate(template) {
-	try {
-		Function("Template", `${template};`)();
-	} catch (error) {
-		console.log(error);
-	}
+	Function("Template", `${template};`)();
 }
 
 subscribe("fail4", event => {
@@ -63,11 +58,9 @@ subscribe("fail4", event => {
 		case "call":
 			host.current = event.source;
 			answer(event.source, "fail4");
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			handleTemplate(action.payload.template);
 			break;
 		case "broadcast":
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			handleTemplate(action.payload.template);
 			break;
 		default:

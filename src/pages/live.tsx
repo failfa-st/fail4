@@ -1,4 +1,5 @@
 import Script from "next/script";
+
 const styles = (
 	<style>
 		{`

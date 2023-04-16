@@ -63,6 +63,7 @@ export async function toOpenAI({
 					Follow these guidelines closely for optimal results:
 
 					* Use "ADD" and "REMOVE" guidelines to modify code as needed.
+					* Use short comments and follow TODO statements
 					* Always output the complete code, including the original "TEMPLATE" minus "REMOVE" plus "ADD".
 					* Use valid JavaScript exclusively in a markdown code block using the provided "TEMPLATE".
 					* Keep a "CHANGELOG" to document changes made to the code.

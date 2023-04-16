@@ -222,7 +222,23 @@ export default function Home() {
 						</Toolbar>
 					</AppBar>
 					{showCode && (
-						<Box sx={{ flex: 1 }}>
+						<Box
+							sx={{ flex: 1 }}
+							onKeyDown={event => {
+								if (event.key === "s" && event.metaKey) {
+									event.preventDefault();
+									setAnswers(previousAnswers =>
+										previousAnswers.map(previousAnswer => {
+											console.log(previousAnswer.id, activeId);
+											return previousAnswer.id === activeId
+												? { ...previousAnswer, content: template }
+												: previousAnswer;
+										})
+									);
+									reload();
+								}
+							}}
+						>
 							<MonacoEditor
 								theme={getTheme(mode, systemMode)}
 								language="javascript"

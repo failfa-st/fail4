@@ -7,11 +7,15 @@ import CheckIcon from "@mui/icons-material/Check";
 import ClearIcon from "@mui/icons-material/Clear";
 import CodeIcon from "@mui/icons-material/Code";
 import CodeOffIcon from "@mui/icons-material/CodeOff";
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ReplayIcon from "@mui/icons-material/Replay";
+import MoneyIcon from "@mui/icons-material/Money";
+import TollIcon from "@mui/icons-material/Toll";
 import TextField from "@mui/material/TextField";
 import { Fira_Code } from "next/font/google";
 import Box from "@mui/material/Box";
@@ -40,6 +44,13 @@ import Button from "@mui/material/Button";
 import dynamic from "next/dynamic";
 
 import prettier from "prettier";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import InputBase from "@mui/material/InputBase";
+import { roboto } from "@/lib/theme";
+import { useColorScheme } from "@mui/material/styles";
 
 function prettify(code: string) {
 	try {
@@ -53,14 +64,20 @@ const MonacoEditor = dynamic(import("@monaco-editor/react"), { ssr: false });
 
 const base = {
 	default: `/** CHANGELOG
- * 1. Set up canvas
+ * v1.0.0. Set up canvas
  */
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
-/*60FPS draw cycle*/
+/*
+ * The draw function is called every frame to update the canvas.
+ * To change the drawing logic, modify the code inside this function.
+ */
 function draw(){
-  const FPS = 60;
-  setTimeout(requestAnimationFrame(draw),1000/FPS)
+	// TODO: Add drawing logic here
+	// Set the desired FPS (frames per second) for the animation
+	const FPS = 60;
+	// Schedule the next frame to be drawn
+	setTimeout(requestAnimationFrame(draw),1000/FPS)
 }
 draw();
 	`.trim(),
@@ -77,18 +94,67 @@ const answersAtom = atomWithStorage<{ id: string; content: string; task: string 
 		task: "Base Script",
 	},
 ]);
+function EditTitle({ value, onSave }: { value: string; onSave(value: string): void }) {
+	const [text, setText] = useState(value);
+	return (
+		<>
+			<Box
+				sx={{
+					pl: 3,
+					pr: 6,
+					flex: 1,
+					display: "flex",
+					alignItems: "center",
+				}}
+			>
+				<InputBase
+					autoFocus
+					value={text}
+					sx={{
+						width: "100%",
+						fontSize: 16,
+						input: { ...roboto.style, p: 0, lineHeight: 1.5 },
+					}}
+					onChange={event => {
+						setText(event.target.value);
+					}}
+					onBlur={() => {
+						onSave(text);
+					}}
+				/>
+			</Box>
+			<IconButton
+				onClick={() => {
+					onSave(text);
+				}}
+			>
+				<SaveIcon />
+			</IconButton>
+		</>
+	);
+}
 
 const showCodeAtom = atomWithStorage("fail4-editor", false);
-
+function getTheme(mode: string | undefined, systemMode: string | undefined) {
+	if (mode === "system") {
+		return `vs-${systemMode}`;
+	}
+	if (mode) {
+		return `vs-${mode}`;
+	}
+	return undefined;
+}
 export default function Home() {
 	const ref = useRef<HTMLIFrameElement>(null);
 	const [template, setTemplate] = useState(prettify(base.default));
 	const [runningId, setRunningId] = useState("1");
 	const [activeId, setActiveId] = useState("1");
+	const [editingId, setEditingId] = useState<string | null>(null);
 	const [answers, setAnswers] = useAtom(answersAtom);
 	const [showCode, setShowCode] = useAtom(showCodeAtom);
 	const [loading, setLoading] = useState(false);
 	const [loadingLive, setLoadingLive] = useState(true);
+	const { mode, systemMode } = useColorScheme();
 
 	const { call, subscribe } = useHost(ref, "fail4");
 
@@ -106,8 +172,6 @@ export default function Home() {
 
 		const timeout = setTimeout(() => {
 			if (current) {
-				// call({ template: "" });
-
 				call({ template: current.content });
 			}
 
@@ -157,7 +221,6 @@ export default function Home() {
 	return (
 		<>
 			<CssBaseline />
-
 			<Stack
 				sx={{
 					...fontMono.style,
@@ -183,17 +246,49 @@ export default function Home() {
 							>
 								Run
 							</Button>
-							<Typography
-								sx={{
-									flex: 1,
-									pl: 3,
-									overflow: "hidden",
-									textOverflow: "ellipsis",
-									whiteSpace: "nowrap",
-								}}
-							>
-								{current?.task} - {current?.id ?? ""}
-							</Typography>
+
+							{current?.id === editingId ? (
+								<EditTitle
+									value={current.task}
+									onSave={value => {
+										setEditingId(null);
+										setAnswers(previousAnswers =>
+											previousAnswers.map(answer_ =>
+												current.id === answer_.id
+													? {
+															...answer_,
+															task: value,
+													  }
+													: answer_
+											)
+										);
+									}}
+								/>
+							) : (
+								<>
+									<Typography
+										sx={{
+											flex: 1,
+											pl: 3,
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+										}}
+									>
+										{current?.task}
+									</Typography>
+									<IconButton
+										onClick={() => {
+											if (current) {
+												setEditingId(current.id);
+											}
+										}}
+									>
+										<EditIcon />
+									</IconButton>
+								</>
+							)}
+
 							<IconButton
 								color="inherit"
 								aria-label={showCode ? "Hide Code" : "Show Code"}
@@ -208,7 +303,6 @@ export default function Home() {
 								color="inherit"
 								aria-label="Clear Prompt"
 								onClick={async () => {
-									// broadcast({ template: base.default });
 									setActiveId("1");
 									setRunningId("1");
 									setTemplate(prettify(base.default));
@@ -222,12 +316,11 @@ export default function Home() {
 					{showCode && (
 						<Box sx={{ flex: 1 }}>
 							<MonacoEditor
-								theme="vs-dark"
+								theme={getTheme(mode, systemMode)}
 								language="javascript"
 								value={template}
 								options={{
 									fontSize: 14,
-									// minimap: { enabled: false },
 								}}
 								onChange={async value => {
 									console.log(value);
@@ -270,8 +363,8 @@ export default function Home() {
 										id="prompt"
 										name="prompt"
 										label="Prompt"
-										placeholder="red heart"
-										defaultValue="red heart"
+										placeholder="matrix code"
+										defaultValue="matrix code"
 										maxRows={6}
 										InputProps={{
 											style: fontMono.style,
@@ -304,6 +397,19 @@ export default function Home() {
 									<Typography>Options</Typography>
 								</AccordionSummary>
 								<AccordionDetails>
+									<FormControl fullWidth variant="outlined" sx={{ mb: 3 }}>
+										<InputLabel id="gpt-model-select-label">Model</InputLabel>
+										<Select
+											labelId="gpt-model-select-label"
+											id="gpt-model-select"
+											name="model"
+											defaultValue="gpt-3.5-turbo"
+											label="Model"
+										>
+											<MenuItem value="gpt-3.5-turbo">GTP 3.5 turbo</MenuItem>
+											<MenuItem value="gpt-4">GPT 4</MenuItem>
+										</Select>
+									</FormControl>
 									<Stack
 										spacing={2}
 										direction="row"
@@ -324,6 +430,26 @@ export default function Home() {
 										/>
 										<LocalFireDepartmentIcon />
 									</Stack>
+									<Stack
+										spacing={2}
+										direction="row"
+										sx={{ mb: 2 }}
+										alignItems="center"
+									>
+										<TollIcon />
+										<Slider
+											marks
+											id="maxTokens"
+											name="maxTokens"
+											min={1024}
+											max={4096}
+											defaultValue={2048}
+											step={256}
+											valueLabelDisplay="auto"
+											aria-label="Max Tokens"
+										/>
+										<MoneyIcon />
+									</Stack>
 									<input
 										id="template"
 										name="template"
@@ -338,7 +464,7 @@ export default function Home() {
 						</Box>
 
 						<List sx={{ flex: 1, overflow: "auto" }}>
-							{answers.map(answer => {
+							{answers.map((answer, index) => {
 								return (
 									<ListItem
 										key={answer.id}
@@ -355,10 +481,15 @@ export default function Home() {
 																)
 															);
 															if (runningId === answer.id) {
-																setActiveId("1");
-																setRunningId("1");
-																setTemplate(prettify(base.default));
-																reload();
+																const previous = answers[index + 1];
+																if (previous) {
+																	setActiveId(previous.id);
+																	setRunningId(previous.id);
+																	setTemplate(
+																		prettify(previous.task)
+																	);
+																	reload();
+																}
 															}
 														}}
 													>
@@ -388,13 +519,15 @@ export default function Home() {
 													<VisibilityIcon />
 												)}
 											</ListItemIcon>
+
 											<ListItemText
-												primary={`${answer.task} - ${answer.id}`}
+												primary={answer.task}
 												primaryTypographyProps={{
 													sx: {
 														overflow: "hidden",
 														textOverflow: "ellipsis",
 														whiteSpace: "nowrap",
+														fontSize: 16,
 													},
 												}}
 											/>

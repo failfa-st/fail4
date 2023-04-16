@@ -27,10 +27,12 @@ function extractCode(string: string) {
 }
 
 export async function toOpenAI({
-	prompt = "be creative",
+	prompt = "extend the code",
 	negativePrompt = "",
 	template = "",
+	model = "gpt-3.5-turbo",
 	temperature = "0.2",
+	maxTokens = "2048",
 }) {
 	const negativePrompt_ = negativePrompt.trim();
 	const prompt_ = prompt.trim();
@@ -46,39 +48,36 @@ export async function toOpenAI({
 			\`\`\`
 			`,
 	};
-	console.log("<<< INPUT Message >>>");
-	console.log(nextMessage.content);
 
 	const task = `${prompt_}${negativePrompt_ ? ` | not(${negativePrompt_})` : ""}`;
 
 	try {
 		const response = await openai.createChatCompletion({
-			model: "gpt-3.5-turbo",
+			model,
 			temperature: Number.parseFloat(temperature),
 			messages: [
 				{
 					role: "system",
 					content: miniPrompt`
-You are an expert JavaScript developer with a creative mindset and a specialization in Canvas-2d.
-You have a keen eye for performance optimization and are highly skilled in creating interactive experiences.
-You always adhere to documentation and meticulously extend the "CHANGELOG" and code.
-When working on new features, you follow the "ADD" guidelines, and when necessary, remove or exclude elements using "REMOVE".
-You also pay close attention to "TEMPLATE" code, extending or fixing it as needed.
-Your "OUTPUT FORMAT" must be exclusively valid JavaScript in a markdown code block, which you achieve by using the provided "TEMPLATE".
+					As a JavaScript expert, you optimize performance and create interactive experiences. You are absurdly creative.
+					Follow these guidelines closely for optimal results:
 
-And remember, the "ADD", "REMOVE", "TEMPLATE", and "OUTPUT FORMAT" guidelines are crucial to follow for optimal results.
-`,
+					* Use "ADD" and "REMOVE" guidelines to modify code as needed.
+					* Always output the complete code, including the original "TEMPLATE" minus "REMOVE" plus "ADD".
+					* Use valid JavaScript exclusively in a markdown code block using the provided "TEMPLATE".
+					* Keep a "CHANGELOG" to document changes made to the code.
+					* Always change the code in some way
+					* Modify the "TEMPLATE" when adding new code elements for continuous improvement.
+    				`,
 				},
 				nextMessage,
 			],
-			max_tokens: 2048,
+			max_tokens: Number.parseInt(maxTokens, 10),
 		});
 
 		const { message } = response.data.choices[0];
 
 		if (message) {
-			console.log("<<< OUTPUT Message >>>");
-			console.log(message.content);
 			return {
 				...message,
 				content: extractCode(message.content).replace(

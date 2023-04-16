@@ -13,6 +13,7 @@ import { roboto } from "@/lib/theme";
 import createEmotionCache from "@/lib/createEmotionCache";
 import { MyAppProps } from "./_app";
 import { getInitColorSchemeScript } from "@mui/material/styles";
+
 interface MyDocumentProps extends DocumentProps {
 	emotionStyleTags: JSX.Element[];
 }

@@ -1,4 +1,4 @@
-import { Roboto } from "next/font/google";
+import { Fira_Code, Roboto } from "next/font/google";
 import { experimental_extendTheme as extendTheme } from "@mui/material/styles";
 
 export const roboto = Roboto({
@@ -38,3 +38,6 @@ const theme = extendTheme({
 });
 
 export default theme;
+export const fontMono = Fira_Code({
+	subsets: ["latin"],
+});

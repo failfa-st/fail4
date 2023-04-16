@@ -1,30 +1,7 @@
-import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
+import { ChatCompletionRequestMessage } from "openai";
 import { nanoid } from "nanoid";
-import process from "node:process";
-
-const configuration = new Configuration({
-	apiKey: process.env.OPENAI_API_KEY,
-});
-
-const openai = new OpenAIApi(configuration);
-
-export function miniPrompt(strings: TemplateStringsArray, ...args: unknown[]) {
-	return strings
-		.flatMap((string, index) => [string, args[index] ?? ""])
-		.join("")
-		.replace(/^\s+/gm, "")
-		.replace(/^\n+/g, "\n")
-		.trim();
-}
-
-function extractCode(string: string) {
-	const codeBlockPattern = /(`{3,})(\w*)\n([\s\S]*?)\1/g;
-	const matches = codeBlockPattern.exec(string);
-	if (matches && matches.length >= 4) {
-		return matches[3];
-	}
-	return string;
-}
+import { openai } from "@/services/api/openai";
+import { extractCode, miniPrompt } from "@/utils";
 
 export async function toOpenAI({
 	prompt = "extend the code",

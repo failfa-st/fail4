@@ -8,7 +8,6 @@ import ClearIcon from "@mui/icons-material/Clear";
 import CodeIcon from "@mui/icons-material/Code";
 import CodeOffIcon from "@mui/icons-material/CodeOff";
 import EditIcon from "@mui/icons-material/Edit";
-import SaveIcon from "@mui/icons-material/Save";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -17,7 +16,6 @@ import ReplayIcon from "@mui/icons-material/Replay";
 import MoneyIcon from "@mui/icons-material/Money";
 import TollIcon from "@mui/icons-material/Toll";
 import TextField from "@mui/material/TextField";
-import { Fira_Code } from "next/font/google";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Accordion from "@mui/material/Accordion";
@@ -39,111 +37,21 @@ import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
 import Slider from "@mui/material/Slider";
 import { useAtom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
 import Button from "@mui/material/Button";
 import dynamic from "next/dynamic";
-
-import prettier from "prettier";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import InputBase from "@mui/material/InputBase";
-import { roboto } from "@/lib/theme";
+import { fontMono } from "@/lib/theme";
 import { useColorScheme } from "@mui/material/styles";
-
-function prettify(code: string) {
-	try {
-		return prettier.format(code, { useTabs: true, semi: true, parser: "babel" });
-	} catch {
-		return code;
-	}
-}
+import { getTheme, prettify } from "@/utils";
+import { answersAtom, showCodeAtom } from "@/store/atoms";
+import { base } from "@/constants";
+import { EditTitle } from "@/components/EditTitle";
 
 const MonacoEditor = dynamic(import("@monaco-editor/react"), { ssr: false });
 
-const base = {
-	default: `/** CHANGELOG
- * v1.0.0. Set up canvas
- */
-const canvas = document.querySelector('canvas');
-const ctx = canvas.getContext('2d');
-/*
- * The draw function is called every frame to update the canvas.
- * To change the drawing logic, modify the code inside this function.
- */
-function draw(){
-	// TODO: Add drawing logic here
-	// Set the desired FPS (frames per second) for the animation
-	const FPS = 60;
-	// Schedule the next frame to be drawn
-	setTimeout(requestAnimationFrame(draw),1000/FPS)
-}
-draw();
-	`.trim(),
-};
-
-const fontMono = Fira_Code({
-	subsets: ["latin"],
-});
-
-const answersAtom = atomWithStorage<{ id: string; content: string; task: string }[]>("fail4", [
-	{
-		id: "1",
-		content: base.default,
-		task: "Base Script",
-	},
-]);
-function EditTitle({ value, onSave }: { value: string; onSave(value: string): void }) {
-	const [text, setText] = useState(value);
-	return (
-		<>
-			<Box
-				sx={{
-					pl: 3,
-					pr: 6,
-					flex: 1,
-					display: "flex",
-					alignItems: "center",
-				}}
-			>
-				<InputBase
-					autoFocus
-					value={text}
-					sx={{
-						width: "100%",
-						fontSize: 16,
-						input: { ...roboto.style, p: 0, lineHeight: 1.5 },
-					}}
-					onChange={event => {
-						setText(event.target.value);
-					}}
-					onBlur={() => {
-						onSave(text);
-					}}
-				/>
-			</Box>
-			<IconButton
-				onClick={() => {
-					onSave(text);
-				}}
-			>
-				<SaveIcon />
-			</IconButton>
-		</>
-	);
-}
-
-const showCodeAtom = atomWithStorage("fail4-editor", false);
-function getTheme(mode: string | undefined, systemMode: string | undefined) {
-	if (mode === "system") {
-		return `vs-${systemMode}`;
-	}
-	if (mode) {
-		return `vs-${mode}`;
-	}
-	return undefined;
-}
 export default function Home() {
 	const ref = useRef<HTMLIFrameElement>(null);
 	const [template, setTemplate] = useState(prettify(base.default));
@@ -406,7 +314,7 @@ export default function Home() {
 											defaultValue="gpt-3.5-turbo"
 											label="Model"
 										>
-											<MenuItem value="gpt-3.5-turbo">GTP 3.5 turbo</MenuItem>
+											<MenuItem value="gpt-3.5-turbo">GPT 3.5 turbo</MenuItem>
 											<MenuItem value="gpt-4">GPT 4</MenuItem>
 										</Select>
 									</FormControl>

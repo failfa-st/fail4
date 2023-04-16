@@ -51,6 +51,7 @@
     "esdeka": "0.1.18",
     "eslint": "8.37.0",
     "eslint-config-next": "13.2.4",
+    "gpt3-tokenizer": "1.1.5",
     "jotai": "2.0.4",
     "monaco-editor": "0.37.1",
     "monaco-themes": "0.4.4",
